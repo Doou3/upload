@@ -1,0 +1,532 @@
+<!-- 검색 입력창과 재생/정지 버튼 -->
+<div style="text-align: center; margin: 20px;">
+  <input type="text" id="searchInput" placeholder="숫자나 키워드를 입력하세요" style="font-size: 20px; padding: 5px;">
+  <button onclick="searchAndPlay()" style="font-size: 20px;">재생</button>
+  <button onclick="stopCurrentAudio()" style="font-size: 20px; margin-left: 10px;">정지</button>
+</div>
+<table id="audioTable" style="width:100%; text-align:center;"></table>
+
+<!-- 스타일 및 스크립트... -->
+
+<style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+  td {
+    width: 16.6%; /* 5개씩 배치 */
+    padding: 1px;
+    border: 1px solid black;
+    vertical-align: top;
+    text-align: center;
+  }
+  img {
+    width: 100%;
+    max-width: 200px; /* 원하는 최대 크기 */
+    height: auto;
+    display: block;
+    margin: 0 auto 1px auto;
+    object-fit: contain;
+  }
+  .audio-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 20px;
+    margin: 0 0px;
+    color: red;
+    transition: color 0.3s ease;
+  }
+  .audio-btn:hover {
+    color: red;
+  }
+  .audio-btn.playing {
+    color: green;
+  }
+  /* 버튼 그룹을 가운데 정렬 */
+  .btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+</style>
+
+<!-- 이미지와 버튼이 동적으로 삽입될 테이블 -->
+<table id="audioTable" border="1"></table>
+
+<script>
+   const items = [
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8253685d92669bbdb.JPG',
+    audio: 'https://buly.kr/3j8I3mb',
+    keyword: '55 브로큰'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/3862685d9266a58f8.png',
+    audio: 'https://blog.kakaocdn.net/dn/b3lTAy/btsOsAZdgoG/U85kNPhKbZwqqcWFm3xWq1/tfile.mp3',
+    keyword: '70 고메응 귀여워서 미안해'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5605685de830bf06c.png',
+    audio: 'https://blog.kakaocdn.net/dn/ddTyY0/btsN4shp0L2/gFxZETcwdIsG3mKQVkHTW0/tfile.mp3',
+    keyword: '80 나니가스키'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5036685d92669f00c.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/sLflA/btsOq8wpDQa/onPBie2oQH5hGzFkOUVrHK/tfile.mp3',
+    keyword: '89 여우'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8714685d9266a142c.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/ba5zn3/btsOs5doclM/7FZTM7LPDSKR4yb5pN6kA0/tfile.mp3',
+    keyword: '90 이머전씨'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bWyP4R/btsOwIp8YZH/fXjPGYpFmgfcoqupn9CcUK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/SEylK/btsOrXt8H1F/8XR9ijhAMM8JhF1L3B2PC1/tfile.mp3',
+    keyword: '95 룩앳미'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/GcH82/btsOuehJy0X/Y4jX18n2Qjf8KCg1QdWR1k/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/dc8HNn/btsOsFe75aK/O31zhRHvU5O2P6bEKfGzuk/tfile.mp3',
+    keyword: '98 비유어캣'
+  },
+  {
+    img: 'https://stimg.afreecatv.com/NORMAL_BBS/4/23546664/456766dd777fa72fe.gif',
+    audio: 'https://blog.kakaocdn.net/dn/2lVpB/btsOrs8YOa6/Z1hkQKpcnCTLIEofvNSyJ1/tfile.mp3',
+    keyword: '99 포켓몬'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/9824685d9266a4a34.png',
+    audio: 'https://blog.kakaocdn.net/dn/dy1X2Q/btsOrXHH8xk/KR5Md1kWxtKcKu35F9RNo0/tfile.mp3',
+    keyword: '101 마티니'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/MlRvt/btsOrTZx7pW/EkG8oRQaz6WVKQ6ueuYFw1/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/b8RKNJ/btsOskCl5Y5/6sKOqMZgUJCIHuQMHgafV1/tfile.mp3',
+    keyword: '102 오빠바이러스'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/by1Rc4/btsOycRkHZY/1H9iM2FyDPuao8nU0ZXgRK/img.png',
+    audio: 'https://github.com/ThonE234/mp3/raw/refs/heads/main/110%20BBOCK.mp3',
+    keyword: '110 뾱뾱이'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/1137685d947c857bc.png',
+    audio: 'https://blog.kakaocdn.net/dn/cc6143/btsOqRuqvcG/pv5CKxNRigG9LzQyV1E2Z0/tfile.mp3',
+    keyword: '111 콩 나물'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bFizUI/btsOAiX1p5r/2yyo9IgK4cOTpKpY4JjCj1/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/YzqM0/btsOsiLkwyL/8pdbfzl4RBds4b4TPfC44K/tfile.mp3',
+    keyword: '112 진압해'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bCh1CJ/btsOsS6n1ud/TXzLjb0KarKQegA8EMhpdk/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/bgOnB6/btsOrAlHQBO/nVdckKN2wCPUi84ql1RIN1/tfile.mp3',
+    keyword: '120 아파트'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/epw72H/btsOrn74pln/k7Ke0ThZxQpabkqFW9ErAk/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/G45j6/btsOsSSP1H9/v03asTzIfaKj6qSIPZWDJ0/tfile.mp3',
+    keyword: '121 팬섭 팬서비스'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/nfxuJ/btsOsyAkAr2/oZHYkA4QI2aJ8yGc2tPVMk/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/4r3N8/btsOsyf2aWq/OVz17MsZQs4gC5xKLXKqF0/tfile.mp3',
+    keyword: '125 잘자요 아가씨'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/9w8Dg/btsOxzzwqyG/iG9IB2PbzeW3DXGZnebDS1/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bE6EQc/btsOrrh0LxS/5mLELHVv6ZHIIjtMIuhXG0/tfile.mp3',
+    keyword: '128 띵땅'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bnc0Pb/btsOv50sQmF/XPoQSKcASWHRhO1MvFc7Wk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/cz0RdN/btsOsgmpp5l/5EM6XEW15qSwa9UqrzXvak/tfile.mp3',
+    keyword: '130 외모'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/BfthL/btsOt1Xu47b/cbdKEv6eqJHCrVlegRWys0/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/dBb7mr/btsOrueEOTu/7clxL9QwjdkYT4kjWqfuCK/tfile.mp3',
+    keyword: '133 무아'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/9061685d9266b165e.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/drOcuZ/btsOs2HIl7d/5TBMhYdOJL7WT4vZHoNA60/tfile.mp3',
+    keyword: '135 삐끼'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/WeN0S/btsOx1WQCJX/psvWIhT3u3zTzHa3DRJ7pk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/12UHQ/btsOseh4yIy/FyFMrGM3rbHUNeqjEztKV1/tfile.mp3',
+    keyword: '138 우치다'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/G2pVO/btsOxgUuKVo/UlP5yya26YryGPRBEAPl21/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/b0FPE5/btsOqQbbXQT/M6omWWHjVoFOWSjviPVRb1/tfile.mp3',
+    keyword: '140 에스업'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/xdaOh/btsOzK8gczQ/KBhpj1i8cZPfUjdAK6yOZ0/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/uRoIc/btsOrwcx2DX/v4N0uk39OMl9WPWZ9Xkwf0/tfile.mp3',
+    keyword: '145 슈파도파'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/QGGqO/btsOCKH7gBU/aGcjLqYaeukkmDKyOhKNgK/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/JHAnn/btsOrztysf0/Zv0uxmqdmTkjBLdhGxvNP1/tfile.mp3',
+    keyword: '149 고민 중독'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/0tdCx/btsOyq2Thf8/X0rGKkOaMF0F0aE7yLBo3k/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/cqnQ7W/btsOsxVKnVe/ZkdOpJrKd2DPo9jd7kntR0/tfile.mp3',
+    keyword: '152 바니'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/vymEU/btsOxjwRo4y/Xm0GBryradHl7LRR0ukuVk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/c3rNMy/btsOsEm164m/GPXnQJjSYfA4QgmxKdb7U1/tfile.mp3',
+    keyword: '155 핑크레이디'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5391685d9266b7978.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/NMdFI/btsOtfAiE5f/G7yRzmnP6cGBzWKOzTwcN1/tfile.mp3',
+    keyword: '158 마그네틱'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/TqjBf/btsOxCvT5Q5/VQII04X6ymChFdPLJC2Xo0/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/Mm5R0/btsOrUKT7KA/wSwPkT9ZcH3BcCiLLc9UXk/tfile.mp3',
+    keyword: '160 해야'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bW3KWc/btsOAYGHX8y/2osaHQYrkESgsQKTHYrdbK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bMI0Th/btsOrATxIwr/KzFy2xeLGJYQaxiC4ixvI0/tfile.mp3',
+    keyword: '165 최애의아이'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/b1H0j1/btsOBnTtTMv/rgb2PENrsXz0Nr8TxPD6mK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/p2NnK/btsOsAkCNu4/zTihvZ72CVmOyZjNkATNM1/tfile.mp3',
+    keyword: '170 나니가스키'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8635685d9266bc1bc.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/IjXKj/btsOr4T2FZ5/1B8FD14TFLL6aKXZRxDzd1/tfile.mp3',
+    keyword: '175 빠라뉴'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/cgN4Lb/btsOAttG5uU/h2sIf9v5omo3rmjn2fVo4K/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/cw7fV4/btsOr2osmPi/oJJJEHEHCQoFK1EbFu4Wxk/tfile.mp3',
+    keyword: '177 클락숀 클락 클락션'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bgDDXL/btsOytTEthL/4TSnMEJfjIH6JRpAW1ntN0/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bUELiw/btsOroZP10I/UyKOEV3KkpWKkzZBG6ZB7K/tfile.mp3',
+    keyword: '180 간바레 센빠이'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/QyLDH/btsODox4HcF/Fdt67SAXsRfqgevTdDKVB1/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bjG7xg/btsOrYlZxrW/D10gnzIFJ6fyjykYkzj3Sk/tfile.mp3',
+    keyword: '185 누나가 알려 줄게'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bPnLGa/btsOsiLh9Im/z2eWm3tWAGKiW4CbjWZxJk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/UXyZN/btsOrDbmWOr/G1O9Be0lx8Mktt3TdplGe0/tfile.mp3',
+    keyword: '188 홀업'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/1802685d9266ca8ee.png',
+    audio: 'https://blog.kakaocdn.net/dn/tkL4w/btsOs2AZ7RQ/wLkjadwIfgvZQAHFsxBHe0/tfile.mp3',
+    keyword: '195 러브쉐이크'
+  },
+ {
+    img: 'https://blog.kakaocdn.net/dn/kCpJJ/btsOCjJySVD/okAF31JutEiVDTZNScjDT0/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/cvKmPV/btsOsyNUSRA/wFl1H5Z72bYoxdkofgMSFk/tfile.mp3',
+    keyword: '199 러브다이브'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/zORYt/btsOv8CRYzf/XjfY3I6h0TLGlrVlv2ZSQK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/kSxL4/btsOtglHe7C/YaibBYhcIhgvAcHDRkvrK0/tfile.mp3',
+    keyword: '201 킥드'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bCPFUM/btsOxLAyPXu/kXDkGPJKRfbKe3jmVDW1Y0/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/cP0x4R/btsOsty28yg/7KlPCkl5vkLEhXUEFwUDC0/tfile.mp3',
+    keyword: '202 앙카'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5146685d9266d2248.png',
+    audio: 'https://blog.kakaocdn.net/dn/c5Zn1S/btsOswo0lrG/6PLTKg8WKkoMAW3B7pxMMk/tfile.mp3',
+    keyword: '203 솜사'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/3132685d9266d0723.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/qW12y/btsOss1cxAz/jdDjyS8IjN9nD11674NNrk/tfile.mp3',
+    keyword: '205 우유'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/cjFSag/btsOwqwvd1m/Eem6CC9KOxt4yAe5vqKmdK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bi7MSq/btsOrlbksae/himmok1z1L1TczOuCIj8ak/tfile.mp3',
+    keyword: '209 매니악'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/k7Yxk/btsOyXTEjuH/K1izrUfbE2FK8qP5kkkPiK/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/uem20/btsOsQOimKO/3nf067tKU436n0UbG8QZrK/tfile.mp3',
+    keyword: '210 너모지'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8628685d9266d8c73.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/JqOBp/btsOsCW0c3w/T31td0oxd50JzsN2hkup4K/tfile.mp3',
+    keyword: '212 푱푱'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/enWRxd/btsOysGluux/5TjIb1Sw2y0IhGZO9LIjh0/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bHXz7L/btsOsiR5vYF/ZV9Hiz7o5reLRDu3diS3F0/tfile.mp3',
+    keyword: '215 바우'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/1134685d9266eaac4.png',
+    audio: 'https://blog.kakaocdn.net/dn/S9tVu/btsOrGlFuwv/HcRG4IlnrYbAAPKfbKRPP1/tfile.mp3',
+    keyword: '220 위플'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/ne8Uk/btsOwFfRlLe/Zy05eHW38uFOX5tR6R4UFk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/bGBQtY/btsOrFtwAvk/0Y4cUkxycs5Em9lNfmRN00/tfile.mp3',
+    keyword: '222 테디'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5831685d9267097ba.png',
+    audio: 'https://blog.kakaocdn.net/dn/vtqxT/btsOtgMJRAx/ID5Z7OvDhBQTM2RoTtCyt0/tfile.mp3',
+    keyword: '228 하이디'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/bkGLA5/btsOyXMS8KI/kPZcez0UlS1TMfNew8YEDk/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/tY1Uf/btsOqTMzSzN/VZa4Aaxr0zQHqOIl7htlYK/tfile.mp3',
+    keyword: '230 파티'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/1696685d92670b164.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/betgtb/btsOqQh2unH/azgnIEkBsQeKNtfC9XkGi1/tfile.mp3',
+    keyword: '235 하앙'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8120685d926715fcf.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/HTydA/btsOsCQf0cS/jJevPTJiKE1BQH7tW3mdaK/tfile.mp3',
+    keyword: '240 엘에스'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/1813685d926722f86.JPG',
+    audio: 'https://blog.kakaocdn.net/dn/N2N8r/btsOsiYRZY7/aai9w73paO0ywLihLbJES0/tfile.mp3',
+    keyword: '250 터미널'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/CkvaO/btsOwaUX5rV/OtIyPD6M6ui4ZP2HyfKX50/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/L0IW2/btsOsVWk9n4/Qx3IUvsBtfG5D4GuOqNu3k/tfile.mp3',
+    keyword: '255 레디올'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/8111685d92673e9c0.png',
+    audio: 'https://blog.kakaocdn.net/dn/k4fs5/btsOs28NJ69/3LD0hpdk65oTzOkkQM6dL0/tfile.mp3',
+    keyword: '260 퍼킹'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/5876685d92674b480.png',
+    audio: 'https://github.com/ThonE234/mp3/raw/refs/heads/main/280%20HotH.mp3',
+    keyword: '280 핫해'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/xyak5/btsOrXOsaIH/44mxKMxZ9OFcy0Ad8JPAK1/img.gif',
+    audio: 'https://blog.kakaocdn.net/dn/bFBdVG/btsOrXOr1Jb/WEgh1eJQOWOwfWHYKT83pk/tfile.mp3',
+    keyword: '300 슬램'
+  },
+  {
+    img: 'https://stimg.sooplive.co.kr/NORMAL_BBS/9/17850789/7041685d926737002.png',
+    audio: 'https://blog.kakaocdn.net/dn/CzSiG/btsOsdpUqyI/DKDd4kEYRmteBKjVBtdIHK/tfile.mp3',
+    keyword: '310 계엄'
+  },
+  {
+    img: 'https://blog.kakaocdn.net/dn/d6Figj/btsOyY550dv/IHXKoSQ3jm8IIJkkmrbqh0/img.png',
+    audio: 'https://blog.kakaocdn.net/dn/cmj9G9/btsOrrI5vqx/VdASCI4KvrkJUOkKlk4K01/tfile.mp3',
+    keyword: '350 다이스'
+  },
+
+      // 위 코드에서 각 객체마다 keyword 추가 필요
+    ];
+
+ 
+ 
+
+  const table = document.getElementById('audioTable');
+  let currentAudio = null;
+  let currentPlayBtn = null;
+
+  // 테이블에 이미지, 버튼, 오디오 생성
+  for (let i = 0; i < items.length; i += 5) {
+    const rowImg = document.createElement('tr');
+    const rowBtn = document.createElement('tr');
+
+    for (let j = 0; j < 5; j++) {
+      const cellImg = document.createElement('td');
+      const cellBtn = document.createElement('td');
+      const item = items[i + j];
+
+      if (item) {
+        const img = document.createElement('img');
+        img.src = item.img;
+
+        const audio = document.createElement('audio');
+        audio.id = 'audio' + (i + j);
+        audio.src = item.audio;
+
+        const playBtn = document.createElement('button');
+        playBtn.className = 'audio-btn';
+        playBtn.textContent = '▶️';
+        playBtn.dataset.id = i + j;
+
+        playBtn.addEventListener('click', function () {
+          const id = this.dataset.id;
+          const audio = document.getElementById('audio' + id);
+
+          if (!audio || !audio.src) return;
+
+          if (currentAudio && currentAudio !== audio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            if (currentPlayBtn) {
+              currentPlayBtn.classList.remove('playing');
+            }
+          }
+
+          if (audio.paused) {
+            audio.play();
+            currentAudio = audio;
+
+            if (currentPlayBtn) {
+              currentPlayBtn.classList.remove('playing');
+            }
+            this.classList.add('playing');
+            currentPlayBtn = this;
+          } else {
+            audio.pause();
+            this.classList.remove('playing');
+            currentAudio = null;
+            currentPlayBtn = null;
+          }
+        });
+
+        const stopBtn = document.createElement('button');
+        stopBtn.className = 'audio-btn';
+        stopBtn.textContent = '⏹️';
+        stopBtn.dataset.id = i + j;
+
+        stopBtn.addEventListener('click', function () {
+          const id = this.dataset.id;
+          const audio = document.getElementById('audio' + id);
+          if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+            if (currentAudio === audio) {
+              currentAudio = null;
+              if (currentPlayBtn) {
+                currentPlayBtn.classList.remove('playing');
+                currentPlayBtn = null;
+              }
+            }
+          }
+        });
+
+        cellImg.appendChild(img);
+        cellBtn.appendChild(playBtn);
+        cellBtn.appendChild(stopBtn);
+        cellBtn.appendChild(audio);
+      }
+
+      rowImg.appendChild(cellImg);
+      rowBtn.appendChild(cellBtn);
+    }
+
+    table.appendChild(rowImg);
+    table.appendChild(rowBtn);
+  }
+
+  // 검색 입력창 이벤트 리스너 - Enter 키로 재생/정지 구현
+const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchAndPlay();
+    }
+  });
+  searchInput.addEventListener('focus', function() {
+    this.select();
+  });
+ 
+
+  // 검색 후 오디오 재생/정지 함수
+  function searchAndPlay() {
+    const keyword = searchInput.value.trim();
+    if (!keyword) return;
+
+    let currentIndex = -1;
+    if (currentAudio) {
+      currentIndex = parseInt(currentAudio.id.replace('audio', ''), 10);
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.keyword && item.keyword.includes(keyword)) {
+        const audio = document.getElementById('audio' + i);
+        if (!audio) return;
+
+        // 같은 곡 재생 중일 때 -> 정지
+        if (currentAudio === audio) {
+          audio.pause();
+          audio.currentTime = 0;
+          if (currentPlayBtn) {
+            currentPlayBtn.classList.remove('playing');
+            currentPlayBtn = null;
+          }
+          currentAudio = null;
+          return;
+        }
+
+        // 다른 곡 재생 중일 때 -> 멈추고 새 곡 재생
+        if (currentAudio && currentAudio !== audio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          if (currentPlayBtn) {
+            currentPlayBtn.classList.remove('playing');
+            currentPlayBtn = null;
+          }
+        }
+
+        audio.play();
+        currentAudio = audio;
+
+        const playButtons = document.querySelectorAll('.audio-btn');
+        playButtons.forEach(btn => btn.classList.remove('playing'));
+
+        const playBtn = document.querySelector(`.audio-btn[data-id='${i}']`);
+        if (playBtn) {
+          playBtn.classList.add('playing');
+          currentPlayBtn = playBtn;
+        }
+        return;
+      }
+    }
+
+    alert('해당 키워드를 가진 노래를 찾을 수 없습니다.');
+  }
+
+  // 현재 재생 중인 오디오 정지 함수
+  function stopCurrentAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
+    if (currentPlayBtn) {
+      currentPlayBtn.classList.remove('playing');
+      currentPlayBtn = null;
+    }
+  }
+</script>
